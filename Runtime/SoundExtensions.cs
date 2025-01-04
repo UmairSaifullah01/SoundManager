@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 
 
-namespace GameDevUtils.SoundSystem
+namespace THEBADDEST.SoundSystem
 {
 
 
@@ -12,9 +12,9 @@ namespace GameDevUtils.SoundSystem
 
 		public static void CreateAudioSource(this Sound sound, Transform parent)
 		{
-			GameObject g = new GameObject(sound.name, typeof(AudioSource));
+			GameObject g = new GameObject(sound.SoundName, typeof(AudioSource));
 			g.transform.SetParent(parent, false);
-			sound.source = g.GetComponent<AudioSource>();
+			sound.Source = g.GetComponent<AudioSource>();
 		}
 
 		public static AudioSource CreateAudioSource(string name, Transform parent)
@@ -30,7 +30,7 @@ namespace GameDevUtils.SoundSystem
 			GameObject g = new GameObject(name, typeof(AudioSource));
 			g.transform.SetParent(parent, false);
 			var source = g.GetComponent<AudioSource>();
-			source.outputAudioMixerGroup = SoundManager.Instance.SourceOutputAudioMixerGroup(type);
+			//source.outputAudioMixerGroup = SoundManager.Instance.SourceOutputAudioMixerGroup(type);
 			return source;
 		}
 

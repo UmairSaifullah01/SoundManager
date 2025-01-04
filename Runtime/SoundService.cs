@@ -5,12 +5,12 @@ using UnityEngine.Audio;
 using Random = UnityEngine.Random;
 
 
-namespace GameDevUtils.SoundSystem
+namespace THEBADDEST.SoundSystem
 {
 
 
 	[CreateAssetMenu]
-	public class SoundSettings : ScriptableObject, IList<Sound>
+	public class SoundService : ScriptableObject, IList<Sound>
 	{
 
 		[SerializeField]                     AudioMixer  audioMixer;
@@ -37,15 +37,15 @@ namespace GameDevUtils.SoundSystem
 		{
 			foreach (Sound s in Sounds)
 			{
-				GameObject g = new GameObject(s.name, typeof(AudioSource));
+				GameObject g = new GameObject(s.SoundName, typeof(AudioSource));
 				g.transform.SetParent(manager.transform, false);
-				s.source                       = g.GetComponent<AudioSource>();
-				s.source.clip                  = (s.playRandomClip) ? s.audioClips[Random.Range(0, s.audioClips.Length)] : s.audioClip;
-				s.source.volume                = s.volume;
-				s.source.pitch                 = s.pitch;
-				s.source.loop                  = s.loop;
-				s.source.outputAudioMixerGroup = GetAudioMixerGroup(s.type);
-				if (s.playOnAwake) s.source.Play();
+				s.Source                       = g.GetComponent<AudioSource>();
+				s.Source.clip                  = (s.PlayRandomClip) ? s.AudioClips[Random.Range(0, s.AudioClips.Length)] : s.AudioClip;
+				s.Source.volume                = s.Volume;
+				s.Source.pitch                 = s.Pitch;
+				s.Source.loop                  = s.Loop;
+				s.Source.outputAudioMixerGroup = GetAudioMixerGroup(s.Type);
+				if (s.PlayOnAwake) s.Source.Play();
 			}
 
 			UpdateVolume(manager);
@@ -107,7 +107,7 @@ namespace GameDevUtils.SoundSystem
 
 		public Sound Find(string soundName)
 		{
-			return Sounds.Find((s => s.name == soundName));
+			return Sounds.Find((s => s.SoundName == soundName));
 		}
 
 		public Sound this[int index]
