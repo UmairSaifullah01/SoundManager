@@ -26,16 +26,24 @@ namespace THEBADDEST.SoundSystem
 			if (!settings) settings = Resources.Load<SoundSettings>("SoundSettings");
 			foreach (Sound sound in sounds)
 			{
-				GameObject gameObject = new GameObject(sound.SoundName, typeof(AudioSource));
-				gameObject.transform.SetParent(parent, false);
-				sound.Source                       = gameObject.GetComponent<AudioSource>();
-				sound.Source.clip                  = (sound.PlayRandomClip) ? sound.AudioClips[Random.Range(0, sound.AudioClips.Length)] : sound.AudioClip;
-				sound.Source.volume                = sound.Volume;
-				sound.Source.pitch                 = sound.Pitch;
-				sound.Source.loop                  = sound.Loop;
-				sound.Source.outputAudioMixerGroup = settings.GetAudioMixerGroup(sound.Type);
-				if (sound.PlayOnAwake) sound.Source.Play();
+				if (sound.PlayOnAwake)
+				{
+					InitializeSound(sound);
+					sound.Source.Play();
+				}
 			}
+		}
+
+		void InitializeSound(Sound sound)
+		{
+			GameObject gameObject = new GameObject(sound.SoundName, typeof(AudioSource));
+			gameObject.transform.SetParent(parent, false);
+			sound.Source                       = gameObject.GetComponent<AudioSource>();
+			sound.Source.clip                  = (sound.PlayRandomClip) ? sound.AudioClips[Random.Range(0, sound.AudioClips.Length)] : sound.AudioClip;
+			sound.Source.volume                = sound.Volume;
+			sound.Source.pitch                 = sound.Pitch;
+			sound.Source.loop                  = sound.Loop;
+			sound.Source.outputAudioMixerGroup = settings.GetAudioMixerGroup(sound.Type);
 		}
 
 		public void Play(string nameOfSound)
@@ -46,7 +54,7 @@ namespace THEBADDEST.SoundSystem
 				Debug.LogWarning("Sound: " + nameOfSound + " not found!");
 				return;
 			}
-
+			if(s.Source==null) InitializeSound(s);
 			s.Source.Play();
 		}
 
@@ -58,7 +66,7 @@ namespace THEBADDEST.SoundSystem
 				Debug.LogWarning("Sound: " + nameOfSound + " not found!");
 				return;
 			}
-
+			if(s.Source==null) InitializeSound(s);
 			s.Source.Play();
 			s.Source.transform.position = position;
 		}

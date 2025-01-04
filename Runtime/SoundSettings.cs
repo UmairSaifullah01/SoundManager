@@ -31,6 +31,25 @@ namespace THEBADDEST.SoundSystem
 			audioMixer.SetFloat("ui",     -80 + 80 * uiVolume);
 			audioMixer.SetFloat("music",  -80 + 80 * musicVolume);
 		}
+		public void SetMasterVolume(float value)
+		{
+			masterVolume = value;
+			audioMixer.SetFloat("volume", -80 + 80 * masterVolume);
+		}
+		
+		public void SetSFXVolume(float value)
+		{
+			sfxVolume = value;
+			audioMixer.SetFloat("sfx",    -80 + 80 * sfxVolume);
+		}
+		public void SetUIVolume(float value)  {
+			uiVolume = value;
+			audioMixer.SetFloat("ui",     -80 + 80 * uiVolume);
+		}
+		public void SetMusicVolume(float value)  {
+			musicVolume = value;
+			audioMixer.SetFloat("music",  -80 + 80 * musicVolume);
+		}
 		public AudioMixerGroup GetAudioMixerGroup(SoundType type)
 		{
 			switch (type)
