@@ -1,7 +1,6 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.Audio;
 using Random = UnityEngine.Random;
 
 
@@ -9,116 +8,109 @@ namespace THEBADDEST.SoundSystem
 {
 
 
-	[CreateAssetMenu]
+	[CreateAssetMenu(fileName = "SoundService", menuName = "THEBADDEST/SoundSystem/SoundService", order = 0)]
 	public class SoundService : ScriptableObject, IList<Sound>
 	{
 
-		[SerializeField]                     AudioMixer  audioMixer;
-		[SerializeField] [Range(0.0f, 1.0f)] float       masterVolume = 1;
-		[SerializeField] [Range(0.0f, 1.0f)] float       sfxVolume    = 1;
-		[SerializeField] [Range(0.0f, 1.0f)] float       uiVolume     = 1;
-		[SerializeField] [Range(0.0f, 1.0f)] float       musicVolume  = 1;
-		[SerializeField]                     bool        mute         = false;
-		[SerializeField]                     List<Sound> Sounds;
+		[SerializeField] List<Sound> sounds;
 
-		public int  Count      => Sounds.Count;
+		public int  Count      => sounds.Count;
 		public bool IsReadOnly => true;
-		public bool isMute
+
+		private Transform     parent;
+		private SoundSettings settings;
+
+		public void Initialize()
 		{
-			get => mute;
-			set
+			parent = new GameObject("GameSounds").transform;
+			if (!settings) settings = Resources.Load<SoundSettings>("SoundSettings");
+			foreach (Sound sound in sounds)
 			{
-				mute = value;
-				audioMixer.SetFloat("volume", -80 + 80 * (mute ? 0 : masterVolume));
+				GameObject gameObject = new GameObject(sound.SoundName, typeof(AudioSource));
+				gameObject.transform.SetParent(parent, false);
+				sound.Source                       = gameObject.GetComponent<AudioSource>();
+				sound.Source.clip                  = (sound.PlayRandomClip) ? sound.AudioClips[Random.Range(0, sound.AudioClips.Length)] : sound.AudioClip;
+				sound.Source.volume                = sound.Volume;
+				sound.Source.pitch                 = sound.Pitch;
+				sound.Source.loop                  = sound.Loop;
+				sound.Source.outputAudioMixerGroup = settings.GetAudioMixerGroup(sound.Type);
+				if (sound.PlayOnAwake) sound.Source.Play();
 			}
 		}
 
-		public void Initialize(SoundManager manager)
+		public void Play(string nameOfSound)
 		{
-			foreach (Sound s in Sounds)
+			Sound s = Find(nameOfSound);
+			if (s == null)
 			{
-				GameObject g = new GameObject(s.SoundName, typeof(AudioSource));
-				g.transform.SetParent(manager.transform, false);
-				s.Source                       = g.GetComponent<AudioSource>();
-				s.Source.clip                  = (s.PlayRandomClip) ? s.AudioClips[Random.Range(0, s.AudioClips.Length)] : s.AudioClip;
-				s.Source.volume                = s.Volume;
-				s.Source.pitch                 = s.Pitch;
-				s.Source.loop                  = s.Loop;
-				s.Source.outputAudioMixerGroup = GetAudioMixerGroup(s.Type);
-				if (s.PlayOnAwake) s.Source.Play();
+				Debug.LogWarning("Sound: " + nameOfSound + " not found!");
+				return;
 			}
 
-			UpdateVolume(manager);
+			s.Source.Play();
 		}
 
-		public void UpdateVolume(SoundManager manager)
+		public void Play(string nameOfSound, Vector3 position)
 		{
-			manager.StartCoroutine(SetVolumes());
+			Sound s = Find(nameOfSound);
+			if (s == null)
+			{
+				Debug.LogWarning("Sound: " + nameOfSound + " not found!");
+				return;
+			}
+
+			s.Source.Play();
+			s.Source.transform.position = position;
 		}
 
-		IEnumerator SetVolumes()
+		public void SetMute(bool value)
 		{
-			yield return new WaitForFixedUpdate();
-			SetVolume(masterVolume, sfxVolume, uiVolume, musicVolume);
+			settings.IsMute = value;
 		}
 
-		public void SetVolume(float master = -1, float sfx = -1, float ui = -1, float music = -1)
+		public void Stop(string nameOfSound)
 		{
-			if (master != -1)
-				audioMixer.SetFloat("volume", -80 + 80 * master);
-			if (sfx   != -1) audioMixer.SetFloat("sfx",   -80 + 80 * sfx);
-			if (ui    != -1) audioMixer.SetFloat("ui",    -80 + 80 * ui);
-			if (music != -1) audioMixer.SetFloat("music", -80 + 80 * music);
+			Sound s = Find(nameOfSound);
+			if (s == null)
+			{
+				Debug.LogWarning("Sound: " + nameOfSound + " not found!");
+				return;
+			}
+
+			if (s.Source.isPlaying)
+				s.Source.Stop();
 		}
 
 		public int IndexOf(Sound item)
 		{
-			return Sounds.IndexOf(item);
+			return sounds.IndexOf(item);
 		}
 
-
-		public AudioMixerGroup GetAudioMixerGroup(SoundType type)
-		{
-			switch (type)
-			{
-				case SoundType.SFX:
-					return audioMixer.FindMatchingGroups("SFX")[0];
-
-				case SoundType.UI:
-					return audioMixer.FindMatchingGroups("UI")[0];
-
-				case SoundType.Music:
-					return audioMixer.FindMatchingGroups("Music")[0];
-
-				default:
-					return audioMixer.FindMatchingGroups("SFX")[0];
-			}
-		}
 
 		public void Insert(int index, Sound item)
 		{
-			Sounds.Insert(index, item);
+			sounds.Insert(index, item);
 		}
 
 		public void RemoveAt(int index)
 		{
-			Sounds.RemoveAt(index);
+			sounds.RemoveAt(index);
 		}
 
 		public Sound Find(string soundName)
 		{
-			return Sounds.Find((s => s.SoundName == soundName));
+			return sounds.Find((s => s.SoundName == soundName));
 		}
 
 		public Sound this[int index]
 		{
-			get => Sounds[index];
-			set => Sounds[index] = value;
+			get => sounds[index];
+			set => sounds[index] = value;
 		}
 
 		public IEnumerator<Sound> GetEnumerator()
 		{
-			return Sounds.GetEnumerator();
+			return sounds.GetEnumerator();
 		}
 
 		IEnumerator IEnumerable.GetEnumerator()
@@ -128,27 +120,27 @@ namespace THEBADDEST.SoundSystem
 
 		public void Add(Sound item)
 		{
-			Sounds.Add(item);
+			sounds.Add(item);
 		}
 
 		public void Clear()
 		{
-			Sounds.Clear();
+			sounds.Clear();
 		}
 
 		public bool Contains(Sound item)
 		{
-			return Sounds.Contains(item);
+			return sounds.Contains(item);
 		}
 
 		public void CopyTo(Sound[] array, int arrayIndex)
 		{
-			Sounds.CopyTo(array, arrayIndex);
+			sounds.CopyTo(array, arrayIndex);
 		}
 
 		public bool Remove(Sound item)
 		{
-			return Sounds.Remove(item);
+			return sounds.Remove(item);
 		}
 
 	}
