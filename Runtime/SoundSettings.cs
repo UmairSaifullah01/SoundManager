@@ -4,8 +4,7 @@ using UnityEngine.Audio;
 
 namespace THEBADDEST.SoundSystem
 {
-
-
+	
 	public class SoundSettings : ScriptableObject
 	{
 
@@ -24,6 +23,13 @@ namespace THEBADDEST.SoundSystem
 				mute = value;
 				audioMixer.SetFloat("volume", -80 + 80 * (mute ? 0 : masterVolume));
 			}
+		}
+		public void UpdateVolume()
+		{
+			audioMixer.SetFloat("volume", -80 + 80 * masterVolume);
+			audioMixer.SetFloat("sfx",    -80 + 80 * sfxVolume);
+			audioMixer.SetFloat("ui",     -80 + 80 * uiVolume);
+			audioMixer.SetFloat("music",  -80 + 80 * musicVolume);
 		}
 		public AudioMixerGroup GetAudioMixerGroup(SoundType type)
 		{

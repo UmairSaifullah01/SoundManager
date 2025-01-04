@@ -1,6 +1,4 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
+﻿using UnityEngine;
 
 
 namespace THEBADDEST.SoundSystem
@@ -19,18 +17,16 @@ namespace THEBADDEST.SoundSystem
 
 		public static AudioSource CreateAudioSource(string name, Transform parent)
 		{
-			GameObject g = new GameObject(name, typeof(AudioSource));
-			g.transform.SetParent(parent, false);
-			var source = g.GetComponent<AudioSource>();
-			return source;
+			return CreateAudioSource(name, parent, SoundType.SFX);
 		}
 
 		public static AudioSource CreateAudioSource(string name, Transform parent, SoundType type)
 		{
 			GameObject g = new GameObject(name, typeof(AudioSource));
 			g.transform.SetParent(parent, false);
-			var source = g.GetComponent<AudioSource>();
-			//source.outputAudioMixerGroup = SoundManager.Instance.SourceOutputAudioMixerGroup(type);
+			var source   = g.GetComponent<AudioSource>();
+			var settings = Resources.Load<SoundSettings>("SoundSettings");
+			source.outputAudioMixerGroup = settings.GetAudioMixerGroup(type);
 			return source;
 		}
 
