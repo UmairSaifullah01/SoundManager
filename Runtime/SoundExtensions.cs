@@ -55,7 +55,7 @@ namespace THEBADDEST.SoundSystem
 		public static void PlayOnShot(this AudioClip clip, Transform position)
 		{
 			var source = CreateAudioSource(clip.name, clip, position);
-			source.Play();
+			source.PlayOneShot(clip);
 			Object.Destroy(source.gameObject, clip.length);
 		}
 
