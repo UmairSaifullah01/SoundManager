@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using Random = UnityEngine.Random;
@@ -85,6 +86,26 @@ namespace THEBADDEST.SoundSystem
 			Settings.IsMute = value;
 		}
 
+		public void SetMute(SoundType type,bool value )
+		{
+			switch (type)
+			{
+				case SoundType.SFX:
+					Settings.SetSFXVolume(value ? 0 : 1);
+					break;
+
+				case SoundType.UI:
+					Settings.SetUIVolume(value ? 0 : 1);
+					break;
+
+				case SoundType.Music:
+					Settings.SetMusicVolume(value ? 0 : 1);
+					break;
+
+				default:
+					throw new ArgumentOutOfRangeException(nameof(type), type, null);
+			}
+		}
 		public void Stop(string nameOfSound)
 		{
 			Sound s = Find(nameOfSound);
