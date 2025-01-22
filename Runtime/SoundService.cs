@@ -18,12 +18,19 @@ namespace THEBADDEST.SoundSystem
 		public bool IsReadOnly => true;
 
 		private Transform     parent;
-		private SoundSettings settings;
+		private SoundSettings cacheSettings;
+		public SoundSettings Settings
+		{
+			get
+			{
+				if (!cacheSettings) cacheSettings = Resources.Load<SoundSettings>("SoundSettings");
+				return cacheSettings;
+			}
+		}
 
 		public void Initialize()
 		{
 			parent = new GameObject("GameSounds").transform;
-			if (!settings) settings = Resources.Load<SoundSettings>("SoundSettings");
 			foreach (Sound sound in sounds)
 			{
 				if (sound.PlayOnAwake)
@@ -43,7 +50,7 @@ namespace THEBADDEST.SoundSystem
 			sound.Source.volume                = sound.Volume;
 			sound.Source.pitch                 = sound.Pitch;
 			sound.Source.loop                  = sound.Loop;
-			sound.Source.outputAudioMixerGroup = settings.GetAudioMixerGroup(sound.Type);
+			sound.Source.outputAudioMixerGroup = Settings.GetAudioMixerGroup(sound.Type);
 		}
 
 		public void Play(string nameOfSound)
@@ -54,7 +61,8 @@ namespace THEBADDEST.SoundSystem
 				Debug.LogWarning("Sound: " + nameOfSound + " not found!");
 				return;
 			}
-			if(s.Source==null) InitializeSound(s);
+
+			if (s.Source == null) InitializeSound(s);
 			s.Source.Play();
 		}
 
@@ -66,14 +74,15 @@ namespace THEBADDEST.SoundSystem
 				Debug.LogWarning("Sound: " + nameOfSound + " not found!");
 				return;
 			}
-			if(s.Source==null) InitializeSound(s);
+
+			if (s.Source == null) InitializeSound(s);
 			s.Source.Play();
 			s.Source.transform.position = position;
 		}
 
 		public void SetMute(bool value)
 		{
-			settings.IsMute = value;
+			Settings.IsMute = value;
 		}
 
 		public void Stop(string nameOfSound)
