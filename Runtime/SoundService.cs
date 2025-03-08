@@ -4,184 +4,334 @@ using System.Collections.Generic;
 using UnityEngine;
 using Random = UnityEngine.Random;
 
-
 namespace THEBADDEST.SoundSystem
 {
-
-
 	[CreateAssetMenu(fileName = "SoundService", menuName = "THEBADDEST/SoundSystem/SoundService", order = 0)]
 	public class SoundService : ScriptableObject, IList<Sound>
 	{
+		[SerializeField] private List<Sound> sounds = new List<Sound>();
+		[SerializeField] private int maxConcurrentSounds = 30;
 
-		[SerializeField] List<Sound> sounds;
+		public int Count => sounds.Count;
+		public bool IsReadOnly => false;
 
-		public int  Count      => sounds.Count;
-		public bool IsReadOnly => true;
-
-		private Transform     parent;
+		private Transform parent;
 		private SoundSettings cacheSettings;
+		private AudioSourcePool audioSourcePool;
+		private Dictionary<string, Sound> soundDictionary;
+		private HashSet<Sound> playingLoopSounds;
+		private bool isInitialized;
+
 		public SoundSettings Settings
 		{
 			get
 			{
 				if (!cacheSettings) cacheSettings = Resources.Load<SoundSettings>("SoundSettings");
+				if (!cacheSettings)
+				{
+					Debug.LogError("SoundSettings not found in Resources folder!");
+					return null;
+				}
 				return cacheSettings;
 			}
 		}
 
 		public void Initialize()
 		{
+			if (isInitialized)
+			{
+				Debug.LogWarning("SoundService is already initialized!");
+				return;
+			}
+
 			parent = new GameObject("GameSounds").transform;
+			DontDestroyOnLoad(parent.gameObject);
+
+			audioSourcePool = new AudioSourcePool(parent, maxConcurrentSounds);
+			soundDictionary = new Dictionary<string, Sound>(sounds.Count);
+			playingLoopSounds = new HashSet<Sound>();
+
+			// Build dictionary for faster lookups
 			foreach (Sound sound in sounds)
 			{
+				if (string.IsNullOrEmpty(sound.SoundName))
+				{
+					Debug.LogError($"Sound name cannot be empty! Skipping sound with clip: {sound.AudioClip}");
+					continue;
+				}
+
+				if (soundDictionary.ContainsKey(sound.SoundName))
+				{
+					Debug.LogError($"Duplicate sound name found: {sound.SoundName}. Sound names must be unique!");
+					continue;
+				}
+
+				soundDictionary.Add(sound.SoundName, sound);
+
 				if (sound.PlayOnAwake)
 				{
-					InitializeSound(sound);
-					sound.Source.Play();
+					PlaySound(sound);
 				}
 			}
+
+			isInitialized = true;
 		}
 
-		void InitializeSound(Sound sound)
+		private void PlaySound(Sound sound)
 		{
-			GameObject gameObject = new GameObject(sound.SoundName, typeof(AudioSource));
-			gameObject.transform.SetParent(parent, false);
-			sound.Source                       = gameObject.GetComponent<AudioSource>();
-			sound.Source.clip                  = (sound.PlayRandomClip) ? sound.AudioClips[Random.Range(0, sound.AudioClips.Length)] : sound.AudioClip;
-			sound.Source.volume                = sound.Volume;
-			sound.Source.pitch                 = sound.Pitch;
-			sound.Source.loop                  = sound.Loop;
-			sound.Source.outputAudioMixerGroup = Settings.GetAudioMixerGroup(sound.Type);
-		}
-
-		public void Play(string nameOfSound)
-		{
-			Sound s = Find(nameOfSound);
-			if (s == null)
+			if (!isInitialized)
 			{
-				Debug.LogWarning("Sound: " + nameOfSound + " not found!");
+				Debug.LogError("SoundService is not initialized! Call Initialize() first.");
 				return;
 			}
 
-			if (s.Source == null) InitializeSound(s);
-			s.Source.Play();
-		}
+			if (sound == null) return;
 
-		public void Play(string nameOfSound, Vector3 position)
-		{
-			Sound s = Find(nameOfSound);
-			if (s == null)
+			AudioSource source = audioSourcePool.Get();
+			if (source == null)
 			{
-				Debug.LogWarning("Sound: " + nameOfSound + " not found!");
+				Debug.LogWarning("No available audio sources in pool. Maximum concurrent sounds reached.");
 				return;
 			}
 
-			if (s.Source == null) InitializeSound(s);
-			s.Source.Play();
-			s.Source.transform.position = position;
+			ConfigureAudioSource(sound, source);
+			source.Play();
+
+			if (sound.Loop)
+			{
+				playingLoopSounds.Add(sound);
+			}
+			else
+			{
+				audioSourcePool.ReturnWhenFinished(source);
+			}
+		}
+
+		private void ConfigureAudioSource(Sound sound, AudioSource source)
+		{
+			source.gameObject.name = sound.SoundName;
+			sound.Source = source;
+
+			// Set the audio clip (handle random clip selection)
+			if (sound.PlayRandomClip && sound.AudioClips != null && sound.AudioClips.Length > 0)
+			{
+				source.clip = sound.AudioClips[Random.Range(0, sound.AudioClips.Length)];
+			}
+			else
+			{
+				source.clip = sound.AudioClip;
+			}
+
+			if (source.clip == null)
+			{
+				Debug.LogError($"No audio clip assigned for sound: {sound.SoundName}");
+				return;
+			}
+
+			// Configure audio source properties
+			source.volume = sound.Volume;
+			source.pitch = sound.Pitch;
+			source.loop = sound.Loop;
+			source.outputAudioMixerGroup = Settings?.GetAudioMixerGroup(sound.Type);
+		}
+
+		public void Play(string soundName)
+		{
+			Sound sound = Find(soundName);
+			if (sound == null)
+			{
+				Debug.LogWarning($"Sound not found: {soundName}");
+				return;
+			}
+
+			PlaySound(sound);
+		}
+
+		public void Play(string soundName, Vector3 position)
+		{
+			Sound sound = Find(soundName);
+			if (sound == null)
+			{
+				Debug.LogWarning($"Sound not found: {soundName}");
+				return;
+			}
+
+			AudioSource source = audioSourcePool.Get();
+			if (source == null) return;
+
+			ConfigureAudioSource(sound, source);
+			source.transform.position = position;
+			source.spatialBlend = 1f;
+			source.Play();
+
+			if (sound.Loop)
+			{
+				playingLoopSounds.Add(sound);
+			}
+			else
+			{
+				audioSourcePool.ReturnWhenFinished(source);
+			}
+		}
+
+		public void Stop(string soundName)
+		{
+			Sound sound = Find(soundName);
+			if (sound == null || sound.Source == null) return;
+
+			sound.Source.Stop();
+			audioSourcePool.Return(sound.Source);
+			playingLoopSounds.Remove(sound);
+			sound.Source = null;
+		}
+
+		public void StopAllSounds()
+		{
+			foreach (Sound sound in playingLoopSounds)
+			{
+				if (sound.Source != null)
+				{
+					sound.Source.Stop();
+					audioSourcePool.Return(sound.Source);
+					sound.Source = null;
+				}
+			}
+			playingLoopSounds.Clear();
+		}
+
+		public void SetVolume(string soundName, float volume)
+		{
+			Sound sound = Find(soundName);
+			if (sound == null) return;
+
+			sound.Volume = volume;
+			if (sound.Source != null)
+			{
+				sound.Source.volume = volume;
+			}
+		}
+
+		public void SetPitch(string soundName, float pitch)
+		{
+			Sound sound = Find(soundName);
+			if (sound == null) return;
+
+			sound.Pitch = pitch;
+			if (sound.Source != null)
+			{
+				sound.Source.pitch = pitch;
+			}
 		}
 
 		public void SetMute(bool value)
 		{
-			Settings.IsMute = value;
+			if (Settings != null)
+			{
+				Settings.IsMute = value;
+			}
 		}
 
-		public void SetMute(SoundType type,bool value )
+		public void SetMute(SoundType type, bool value)
 		{
+			if (Settings == null) return;
+
 			switch (type)
 			{
 				case SoundType.SFX:
 					Settings.SetSFXVolume(value ? 0 : 1);
 					break;
-
 				case SoundType.UI:
 					Settings.SetUIVolume(value ? 0 : 1);
 					break;
-
 				case SoundType.Music:
 					Settings.SetMusicVolume(value ? 0 : 1);
 					break;
-
 				default:
 					throw new ArgumentOutOfRangeException(nameof(type), type, null);
 			}
 		}
-		public void Stop(string nameOfSound)
-		{
-			Sound s = Find(nameOfSound);
-			if (s == null)
-			{
-				Debug.LogWarning("Sound: " + nameOfSound + " not found!");
-				return;
-			}
-
-			if (s.Source.isPlaying)
-				s.Source.Stop();
-		}
-
-		public int IndexOf(Sound item)
-		{
-			return sounds.IndexOf(item);
-		}
-
-
-		public void Insert(int index, Sound item)
-		{
-			sounds.Insert(index, item);
-		}
-
-		public void RemoveAt(int index)
-		{
-			sounds.RemoveAt(index);
-		}
 
 		public Sound Find(string soundName)
 		{
-			return sounds.Find((s => s.SoundName == soundName));
+			if (string.IsNullOrEmpty(soundName))
+			{
+				Debug.LogError("Sound name cannot be null or empty!");
+				return null;
+			}
+
+			return soundDictionary.TryGetValue(soundName, out Sound sound) ? sound : null;
 		}
 
+		public void OnDisable()
+		{
+			if (parent != null)
+			{
+				StopAllSounds();
+				Destroy(parent.gameObject);
+			}
+		}
+
+		#region IList Implementation
 		public Sound this[int index]
 		{
 			get => sounds[index];
 			set => sounds[index] = value;
 		}
 
-		public IEnumerator<Sound> GetEnumerator()
+		public void Add(Sound sound)
 		{
-			return sounds.GetEnumerator();
-		}
+			if (sound == null || string.IsNullOrEmpty(sound.SoundName))
+			{
+				Debug.LogError("Cannot add null sound or sound with empty name!");
+				return;
+			}
 
-		IEnumerator IEnumerable.GetEnumerator()
-		{
-			return GetEnumerator();
-		}
+			if (isInitialized && soundDictionary.ContainsKey(sound.SoundName))
+			{
+				Debug.LogError($"Sound with name {sound.SoundName} already exists!");
+				return;
+			}
 
-		public void Add(Sound item)
-		{
-			sounds.Add(item);
+			sounds.Add(sound);
+			if (isInitialized)
+			{
+				soundDictionary.Add(sound.SoundName, sound);
+			}
 		}
 
 		public void Clear()
 		{
+			StopAllSounds();
 			sounds.Clear();
+			soundDictionary?.Clear();
 		}
 
-		public bool Contains(Sound item)
+		public bool Contains(Sound sound) => sounds.Contains(sound);
+		public void CopyTo(Sound[] array, int arrayIndex) => sounds.CopyTo(array, arrayIndex);
+		public int IndexOf(Sound sound) => sounds.IndexOf(sound);
+		public void Insert(int index, Sound sound) => sounds.Insert(index, sound);
+		public bool Remove(Sound sound)
 		{
-			return sounds.Contains(item);
+			if (sound != null)
+			{
+				Stop(sound.SoundName);
+				soundDictionary?.Remove(sound.SoundName);
+				return sounds.Remove(sound);
+			}
+			return false;
 		}
-
-		public void CopyTo(Sound[] array, int arrayIndex)
+		public void RemoveAt(int index)
 		{
-			sounds.CopyTo(array, arrayIndex);
+			if (index >= 0 && index < sounds.Count)
+			{
+				Sound sound = sounds[index];
+				Stop(sound.SoundName);
+				soundDictionary?.Remove(sound.SoundName);
+				sounds.RemoveAt(index);
+			}
 		}
-
-		public bool Remove(Sound item)
-		{
-			return sounds.Remove(item);
-		}
-
+		public IEnumerator<Sound> GetEnumerator() => sounds.GetEnumerator();
+		IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+		#endregion
 	}
-
-
 }
