@@ -1,3 +1,4 @@
 {
-	"name": "THEBADDEST.SoundManager"
+	"name": "THEBADDEST.SoundManager",
+	"references":[ "GUID:31f822591bb624124b2a9142ecb8a1cf" ]
 }

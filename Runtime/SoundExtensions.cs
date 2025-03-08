@@ -1,6 +1,6 @@
 ﻿using UnityEngine;
-using UnityEngine.Audio;
 using System;
+using THEBADDEST.Coroutines;
 
 namespace THEBADDEST.SoundSystem
 {
@@ -184,7 +184,7 @@ namespace THEBADDEST.SoundSystem
 
 			source.volume = 0f;
 			source.Play();
-			MonoBehaviourHelper.Instance.StartCoroutine(FadeCoroutine(source, 0f, targetVolume, duration));
+			CoroutineHandler.StartStaticCoroutine(FadeCoroutine(source, 0f, targetVolume, duration));
 		}
 
 		/// <summary>
@@ -198,7 +198,7 @@ namespace THEBADDEST.SoundSystem
 			}
 
 			float startVolume = source.volume;
-			MonoBehaviourHelper.Instance.StartCoroutine(FadeCoroutine(source, startVolume, 0f, duration, destroyWhenDone));
+			CoroutineHandler.StartStaticCoroutine(FadeCoroutine(source, startVolume, 0f, duration, destroyWhenDone));
 		}
 
 		private static System.Collections.IEnumerator FadeCoroutine(AudioSource source, float startVolume, float endVolume, float duration, bool destroyWhenDone = false)
@@ -232,35 +232,6 @@ namespace THEBADDEST.SoundSystem
 			source.playOnAwake = false;
 			source.outputAudioMixerGroup = Settings?.GetAudioMixerGroup(type);
 			return source;
-		}
-	}
-
-	/// <summary>
-	/// Helper class to run coroutines from static context
-	/// </summary>
-	internal class MonoBehaviourHelper : MonoBehaviour
-	{
-		private static MonoBehaviourHelper instance;
-		public static MonoBehaviourHelper Instance
-		{
-			get
-			{
-				if (instance == null)
-				{
-					var go = new GameObject("SoundExtensionsHelper");
-					DontDestroyOnLoad(go);
-					instance = go.AddComponent<MonoBehaviourHelper>();
-				}
-				return instance;
-			}
-		}
-
-		private void OnDestroy()
-		{
-			if (instance == this)
-			{
-				instance = null;
-			}
 		}
 	}
 }
