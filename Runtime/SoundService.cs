@@ -38,7 +38,7 @@ namespace THEBADDEST.SoundSystem
 
 		public void Initialize()
 		{
-			if (isInitialized)
+			if (isInitialized && parent != null)
 			{
 				Debug.LogWarning("SoundService is already initialized!");
 				return;
