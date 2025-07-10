@@ -184,7 +184,7 @@ namespace THEBADDEST.SoundSystem
 
 			source.volume = 0f;
 			source.Play();
-			CoroutineHandler.StartStaticCoroutine(FadeCoroutine(source, 0f, targetVolume, duration));
+			Coroutines.CoroutineHandler.StartStaticCoroutine(FadeCoroutine(source, 0f, targetVolume, duration));
 		}
 
 		/// <summary>
@@ -198,7 +198,7 @@ namespace THEBADDEST.SoundSystem
 			}
 
 			float startVolume = source.volume;
-			CoroutineHandler.StartStaticCoroutine(FadeCoroutine(source, startVolume, 0f, duration, destroyWhenDone));
+			Coroutines.CoroutineHandler.StartStaticCoroutine(FadeCoroutine(source, startVolume, 0f, duration, destroyWhenDone));
 		}
 
 		private static System.Collections.IEnumerator FadeCoroutine(AudioSource source, float startVolume, float endVolume, float duration, bool destroyWhenDone = false)
