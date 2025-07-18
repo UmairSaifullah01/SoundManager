@@ -38,12 +38,6 @@ namespace THEBADDEST.SoundSystem
 
 		public void Initialize()
 		{
-			if (isInitialized)
-			{
-				Debug.LogWarning("SoundService is already initialized!");
-				return;
-			}
-
 			parent = new GameObject("GameSounds").transform;
 			DontDestroyOnLoad(parent.gameObject);
 
