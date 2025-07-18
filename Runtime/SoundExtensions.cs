@@ -1,6 +1,7 @@
 ﻿using UnityEngine;
 using System;
-using THEBADDEST.Coroutines;
+using THEBADDEST.Tasks;
+
 
 namespace THEBADDEST.SoundSystem
 {
@@ -184,7 +185,7 @@ namespace THEBADDEST.SoundSystem
 
 			source.volume = 0f;
 			source.Play();
-			CoroutineHandler.StartStaticCoroutine(FadeCoroutine(source, 0f, targetVolume, duration));
+			FadeCoroutine(source, 0f, targetVolume, duration);
 		}
 
 		/// <summary>
@@ -198,10 +199,10 @@ namespace THEBADDEST.SoundSystem
 			}
 
 			float startVolume = source.volume;
-			CoroutineHandler.StartStaticCoroutine(FadeCoroutine(source, startVolume, 0f, duration, destroyWhenDone));
+			FadeCoroutine(source, startVolume, 0f, duration, destroyWhenDone);
 		}
 
-		private static System.Collections.IEnumerator FadeCoroutine(AudioSource source, float startVolume, float endVolume, float duration, bool destroyWhenDone = false)
+		private static async void FadeCoroutine(AudioSource source, float startVolume, float endVolume, float duration, bool destroyWhenDone = false)
 		{
 			float elapsed = 0f;
 			while (elapsed < duration && source != null)
@@ -209,7 +210,8 @@ namespace THEBADDEST.SoundSystem
 				elapsed += Time.deltaTime;
 				float normalizedTime = elapsed / duration;
 				source.volume = Mathf.Lerp(startVolume, endVolume, normalizedTime);
-				yield return null;
+				// frame delay
+				await UTask.NextFrame();
 			}
 
 			if (source != null)
