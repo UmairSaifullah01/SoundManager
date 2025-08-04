@@ -44,7 +44,7 @@ namespace THEBADDEST.SoundSystem
 			audioSourcePool = new AudioSourcePool(parent, maxConcurrentSounds);
 			soundDictionary = new Dictionary<string, Sound>(sounds.Count);
 			playingLoopSounds = new HashSet<Sound>();
-
+			isInitialized = true;
 			// Build dictionary for faster lookups
 			foreach (Sound sound in sounds)
 			{
@@ -68,7 +68,7 @@ namespace THEBADDEST.SoundSystem
 				}
 			}
 
-			isInitialized = true;
+			
 		}
 
 		private void PlaySound(Sound sound)
