@@ -1,4 +1,16 @@
 {
-	"name": "THEBADDEST.SoundManager",
-	"references":[ "GUID:31f822591bb624124b2a9142ecb8a1cf" ]
+    "name": "THEBADDEST.SoundManager",
+    "rootNamespace": "",
+    "references": [
+        "GUID:21aac5235c2f34b9f86f125bde9abad4"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
 }
