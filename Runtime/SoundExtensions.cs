@@ -1,5 +1,6 @@
 ﻿using UnityEngine;
 using System;
+using System.Collections.Generic;
 using THEBADDEST.Tasks;
 
 
@@ -235,5 +236,391 @@ namespace THEBADDEST.SoundSystem
 			source.outputAudioMixerGroup = Settings?.GetAudioMixerGroup(type);
 			return source;
 		}
+
+		#region SoundService ID System Extensions
+
+		/// <summary>
+		/// Plays a sound using SoundService and returns the sound ID
+		/// </summary>
+		public static int PlayWithId(this SoundService soundService, string soundName)
+		{
+			if (soundService == null)
+			{
+				throw new ArgumentNullException(nameof(soundService));
+			}
+			return soundService.Play(soundName);
+		}
+
+		/// <summary>
+		/// Plays a sound at a specific position using SoundService and returns the sound ID
+		/// </summary>
+		public static int PlayWithId(this SoundService soundService, string soundName, Vector3 position)
+		{
+			if (soundService == null)
+			{
+				throw new ArgumentNullException(nameof(soundService));
+			}
+			return soundService.Play(soundName, position);
+		}
+
+		/// <summary>
+		/// Plays a Sound object using SoundService and returns the sound ID
+		/// </summary>
+		public static int PlayWithId(this SoundService soundService, Sound sound)
+		{
+			if (soundService == null)
+			{
+				throw new ArgumentNullException(nameof(soundService));
+			}
+			return soundService.Play(sound);
+		}
+
+		/// <summary>
+		/// Plays a one-shot sound using SoundService and returns the sound ID
+		/// </summary>
+		public static int PlayOneShot(this SoundService soundService, string soundName)
+		{
+			if (soundService == null)
+			{
+				throw new ArgumentNullException(nameof(soundService));
+			}
+
+			Sound sound = soundService.Find(soundName);
+			if (sound == null)
+			{
+				Debug.LogWarning($"Sound not found: {soundName}");
+				return -1;
+			}
+
+			// Ensure it's non-looping for one-shot
+			bool originalLoop = sound.Loop;
+			sound.Loop = false;
+			int soundId = soundService.Play(sound);
+			sound.Loop = originalLoop; // Restore original loop setting
+
+			return soundId;
+		}
+
+		/// <summary>
+		/// Plays a one-shot sound at a specific position using SoundService and returns the sound ID
+		/// </summary>
+		public static int PlayOneShot(this SoundService soundService, string soundName, Vector3 position)
+		{
+			if (soundService == null)
+			{
+				throw new ArgumentNullException(nameof(soundService));
+			}
+
+			Sound sound = soundService.Find(soundName);
+			if (sound == null)
+			{
+				Debug.LogWarning($"Sound not found: {soundName}");
+				return -1;
+			}
+
+			// Ensure it's non-looping for one-shot
+			bool originalLoop = sound.Loop;
+			sound.Loop = false;
+			int soundId = soundService.Play(soundName, position);
+			sound.Loop = originalLoop; // Restore original loop setting
+
+			return soundId;
+		}
+
+		/// <summary>
+		/// Plays a one-shot Sound object using SoundService and returns the sound ID
+		/// </summary>
+		public static int PlayOneShot(this SoundService soundService, Sound sound)
+		{
+			if (soundService == null)
+			{
+				throw new ArgumentNullException(nameof(soundService));
+			}
+
+			if (sound == null)
+			{
+				Debug.LogWarning("Sound is null!");
+				return -1;
+			}
+
+			// Ensure it's non-looping for one-shot
+			bool originalLoop = sound.Loop;
+			sound.Loop = false;
+			int soundId = soundService.Play(sound);
+			sound.Loop = originalLoop; // Restore original loop setting
+
+			return soundId;
+		}
+
+		/// <summary>
+		/// Stops a sound by ID using SoundService
+		/// </summary>
+		public static void StopById(this SoundService soundService, int soundId)
+		{
+			if (soundService == null)
+			{
+				throw new ArgumentNullException(nameof(soundService));
+			}
+			soundService.Stop(soundId);
+		}
+
+		/// <summary>
+		/// Pauses a sound by ID using SoundService
+		/// </summary>
+		public static void PauseById(this SoundService soundService, int soundId)
+		{
+			if (soundService == null)
+			{
+				throw new ArgumentNullException(nameof(soundService));
+			}
+			soundService.Pause(soundId);
+		}
+
+		/// <summary>
+		/// Resumes a paused sound by ID using SoundService
+		/// </summary>
+		public static void ResumeById(this SoundService soundService, int soundId)
+		{
+			if (soundService == null)
+			{
+				throw new ArgumentNullException(nameof(soundService));
+			}
+			soundService.Resume(soundId);
+		}
+
+		/// <summary>
+		/// Pauses all sounds using SoundService
+		/// </summary>
+		public static void PauseAll(this SoundService soundService)
+		{
+			if (soundService == null)
+			{
+				throw new ArgumentNullException(nameof(soundService));
+			}
+			soundService.PauseAll();
+		}
+
+		/// <summary>
+		/// Resumes all paused sounds using SoundService
+		/// </summary>
+		public static void ResumeAll(this SoundService soundService)
+		{
+			if (soundService == null)
+			{
+				throw new ArgumentNullException(nameof(soundService));
+			}
+			soundService.ResumeAll();
+		}
+
+		/// <summary>
+		/// Pauses all instances of a sound by name using SoundService
+		/// </summary>
+		public static void Pause(this SoundService soundService, string soundName)
+		{
+			if (soundService == null)
+			{
+				throw new ArgumentNullException(nameof(soundService));
+			}
+			soundService.Pause(soundName);
+		}
+
+		/// <summary>
+		/// Resumes all instances of a sound by name using SoundService
+		/// </summary>
+		public static void Resume(this SoundService soundService, string soundName)
+		{
+			if (soundService == null)
+			{
+				throw new ArgumentNullException(nameof(soundService));
+			}
+			soundService.Resume(soundName);
+		}
+
+		/// <summary>
+		/// Checks if a sound is paused by ID
+		/// </summary>
+		public static bool IsPausedById(this SoundService soundService, int soundId)
+		{
+			if (soundService == null)
+			{
+				throw new ArgumentNullException(nameof(soundService));
+			}
+			return soundService.IsPaused(soundId);
+		}
+
+		/// <summary>
+		/// Checks if a sound is playing by ID
+		/// </summary>
+		public static bool IsPlayingById(this SoundService soundService, int soundId)
+		{
+			if (soundService == null)
+			{
+				throw new ArgumentNullException(nameof(soundService));
+			}
+			return soundService.IsPlaying(soundId);
+		}
+
+		/// <summary>
+		/// Gets the AudioSource by sound ID
+		/// </summary>
+		public static AudioSource GetAudioSourceById(this SoundService soundService, int soundId)
+		{
+			if (soundService == null)
+			{
+				throw new ArgumentNullException(nameof(soundService));
+			}
+			return soundService.GetAudioSource(soundId);
+		}
+
+		/// <summary>
+		/// Gets the Sound object by sound ID
+		/// </summary>
+		public static Sound GetSoundById(this SoundService soundService, int soundId)
+		{
+			if (soundService == null)
+			{
+				throw new ArgumentNullException(nameof(soundService));
+			}
+			return soundService.GetSound(soundId);
+		}
+
+		/// <summary>
+		/// Sets the volume of a sound by ID
+		/// </summary>
+		public static void SetVolumeById(this SoundService soundService, int soundId, float volume)
+		{
+			if (soundService == null)
+			{
+				throw new ArgumentNullException(nameof(soundService));
+			}
+			soundService.SetVolume(soundId, volume);
+		}
+
+		/// <summary>
+		/// Sets the pitch of a sound by ID
+		/// </summary>
+		public static void SetPitchById(this SoundService soundService, int soundId, float pitch)
+		{
+			if (soundService == null)
+			{
+				throw new ArgumentNullException(nameof(soundService));
+			}
+			soundService.SetPitch(soundId, pitch);
+		}
+
+		/// <summary>
+		/// Fades in a sound by ID over time
+		/// </summary>
+		public static void FadeInById(this SoundService soundService, int soundId, float duration, float targetVolume = 1f)
+		{
+			if (soundService == null)
+			{
+				throw new ArgumentNullException(nameof(soundService));
+			}
+
+			AudioSource source = soundService.GetAudioSource(soundId);
+			if (source != null)
+			{
+				source.FadeIn(duration, targetVolume);
+			}
+		}
+
+		/// <summary>
+		/// Fades out a sound by ID over time
+		/// </summary>
+		public static void FadeOutById(this SoundService soundService, int soundId, float duration, bool stopWhenDone = true)
+		{
+			if (soundService == null)
+			{
+				throw new ArgumentNullException(nameof(soundService));
+			}
+
+			AudioSource source = soundService.GetAudioSource(soundId);
+			if (source != null)
+			{
+				source.FadeOut(duration, false);
+				if (stopWhenDone)
+				{
+					FadeOutAndStopCoroutine(soundService, soundId, duration);
+				}
+			}
+		}
+
+		private static async void FadeOutAndStopCoroutine(SoundService soundService, int soundId, float duration)
+		{
+			await UTask.Delay(duration);
+			if (soundService != null && soundService.IsPlaying(soundId))
+			{
+				soundService.Stop(soundId);
+			}
+		}
+
+		/// <summary>
+		/// Plays a sound and fades it in, returning the sound ID
+		/// </summary>
+		public static int PlayWithFadeIn(this SoundService soundService, string soundName, float fadeDuration, float targetVolume = 1f)
+		{
+			if (soundService == null)
+			{
+				throw new ArgumentNullException(nameof(soundService));
+			}
+
+			int soundId = soundService.Play(soundName);
+			if (soundId != -1)
+			{
+				soundService.FadeInById(soundId, fadeDuration, targetVolume);
+			}
+			return soundId;
+		}
+
+		/// <summary>
+		/// Plays a sound at position and fades it in, returning the sound ID
+		/// </summary>
+		public static int PlayWithFadeIn(this SoundService soundService, string soundName, Vector3 position, float fadeDuration, float targetVolume = 1f)
+		{
+			if (soundService == null)
+			{
+				throw new ArgumentNullException(nameof(soundService));
+			}
+
+			int soundId = soundService.Play(soundName, position);
+			if (soundId != -1)
+			{
+				soundService.FadeInById(soundId, fadeDuration, targetVolume);
+			}
+			return soundId;
+		}
+
+		/// <summary>
+		/// Stops a sound with fade out
+		/// </summary>
+		public static void StopWithFadeOut(this SoundService soundService, int soundId, float fadeDuration)
+		{
+			if (soundService == null)
+			{
+				throw new ArgumentNullException(nameof(soundService));
+			}
+
+			soundService.FadeOutById(soundId, fadeDuration, true);
+		}
+
+		/// <summary>
+		/// Stops a sound by name with fade out (stops all instances)
+		/// </summary>
+		public static void StopWithFadeOut(this SoundService soundService, string soundName, float fadeDuration)
+		{
+			if (soundService == null)
+			{
+				throw new ArgumentNullException(nameof(soundService));
+			}
+
+			List<int> idsToFade = soundService.GetPlayingSoundIds(soundName);
+			foreach (int id in idsToFade)
+			{
+				soundService.FadeOutById(id, fadeDuration, true);
+			}
+		}
+
+		#endregion
 	}
 }
